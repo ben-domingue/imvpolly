@@ -76,10 +76,11 @@ parfun<-function(args,sim) {
         }
         x<-merge(x,z[[1]])
         ##
-        x$resp0<-x$resp
-        x$p<-mean(x$resp0)
-        x$truep<-1-x$truep0
-        x$resp<-rbinom(nrow(x),1,x$truep)
+        x$p<-mean(x$resp)
+        x$resp<-x$resp0
+        x$resp<-ifelse(x$resp>resp.floor,1,0)
+        #x$truep<-1-x$truep0
+        #x$resp<-rbinom(nrow(x),1,x$truep)
         ##
         omctt[[as.character(resp.floor)]]<-imv(x,p1='p',p2='Rasch')
     }
@@ -125,11 +126,11 @@ parfun<-function(args,sim) {
     L<-split(x,x$item)
     pctt.tab<-lapply(L,function(x) table(x$resp)/nrow(x))
     ##
-    x$resp0<-x$resp
-    pr<-x[,paste("truep",0:(K-1),sep='')]
-    resp<-numeric()
-    for (i in 1:nrow(pr)) resp[i]<-which(rmultinom(1,1,pr[i,])[,1]>0)-1
-    x$resp<-resp
+    x$resp<-x$resp0
+    #pr<-x[,paste("truep",0:(K-1),sep='')]
+    #resp<-numeric()
+    #for (i in 1:nrow(pr)) resp[i]<-which(rmultinom(1,1,pr[i,])[,1]>0)-1
+    #x$resp<-resp
     ########################
     ## imv category
     L<-split(x,x$item)
@@ -184,9 +185,10 @@ pcmsim<-function(np,a=NULL,J=15,K=5,b.delta) {
         den<-rowSums(psi)
         p<-psi/den
         colnames(p)<-paste("truep",0:(ncol(p)-1),sep='')
-        resp<-numeric()
+        resp0<-resp<-numeric()
         for (i in 1:np) resp[i]<-which(rmultinom(1,1,p[i,])[,1]>0)-1
-        L[[j]]<-data.frame(item=paste0("item_",10+j),id=1:np,resp=resp,p)
+        for (i in 1:np) resp0[i]<-which(rmultinom(1,1,p[i,])[,1]>0)-1
+        L[[j]]<-data.frame(item=paste0("item_",10+j),id=1:np,resp=resp,p,resp0=resp0)
     }
     data.frame(do.call("rbind",L))
 }
@@ -196,8 +198,8 @@ grmsim<-function(np,a=NULL,J=15,K=5,b.delta) {
     if (is.null(a)) a<-rep(1,J)
     L<-list()
     for (j in 1:J) { #over items
-        b<-runif(1,min=0,max=1)
-        b<-c(b,b+b.delta)
+        b<-runif(1,min=-1,max=1)
+        b<-sort(c(b,b+b.delta))
         ##
         p<-list()
         for (i in 1:length(b)) {
@@ -209,15 +211,36 @@ grmsim<-function(np,a=NULL,J=15,K=5,b.delta) {
         for (i in 1:(ncol(p)-1)) p[,i]<-p[,i]-p[,i+1]
         p<-cbind(p0,p)
         colnames(p)<-paste("truep",0:(ncol(p)-1),sep='')
-        resp<-numeric()
+        resp0<-resp<-numeric()
         for (i in 1:np) resp[i]<-which(rmultinom(1,1,p[i,])[,1]>0)-1
-        L[[j]]<-data.frame(item=paste0("item_",10+j),id=1:np,resp=resp,p)
+        for (i in 1:np) resp0[i]<-which(rmultinom(1,1,p[i,])[,1]>0)-1
+        L[[j]]<-data.frame(item=paste0("item_",10+j),id=1:np,resp=resp,p,resp0=resp0)
+    }
+    data.frame(do.call("rbind",L))
+}
+twoplsim<-function(np,J=15,b.delta,K,a=NULL) {
+    th<-rnorm(np)
+    b<-rnorm(J)
+    L<-list()
+    for (j in 1:J) {
+        del<-th-b[j]
+        p<-1/(1+exp(-del))
+        ##
+        resp<-rbinom(np,1,p)
+        del<-rbinom(np,1,b.delta)
+        resp<-ifelse(resp==1,resp+del,resp)
+        ##
+        resp0<-rbinom(np,1,p)
+        del<-rbinom(np,1,b.delta)
+        resp0<-ifelse(resp0==1,resp0+del,resp0)
+        L[[j]]<-data.frame(item=paste0("item_",10+j),id=1:np,resp=resp,p,resp0=resp0)
     }
     data.frame(do.call("rbind",L))
 }
 
 J<-20
-np<-c(1000)
+np<-c(3000)
+
 b.delta<- seq(-3,3,by=.25)
 z<-expand.grid(1:1,np,J,b.delta)
 argvals<-list()
@@ -225,42 +248,52 @@ for (i in 1:nrow(z)) argvals[[i]]<-list(z[i,2],z[i,3],z[i,4])
 library(parallel)
 tab1<-mclapply(argvals,parfun,mc.cores=2,sim=pcmsim)
 
-b.delta<-seq(.05,1.5,by=.1)
+b.delta<-seq(-1,1,by=.1)
+b.delta<-b.delta[b.delta!=0]
 z<-expand.grid(1:1,np,J,b.delta)
 argvals<-list()
 for (i in 1:nrow(z)) argvals[[i]]<-list(z[i,2],z[i,3],z[i,4])
 library(parallel)
 tab2<-mclapply(argvals,parfun,mc.cores=2,sim=grmsim)
 
+b.delta<-seq(0.01,.51,by=.1)
+z<-expand.grid(1:1,np,J,b.delta)
+argvals<-list()
+for (i in 1:nrow(z)) argvals[[i]]<-list(z[i,2],z[i,3],z[i,4])
+library(parallel)
+tab3<-mclapply(argvals,parfun,mc.cores=2,sim=twoplsim)
 
 
 pf<-function(z) {
-    plot(z$b,z$per0,type='l',xlim=c(min(z$b),max(z$b)*1.1),xlab="b.delta",ylab="% responses",ylim=c(0,1))
+    plot(NULL,type='l',xlim=c(min(z$b),max(z$b)*1.1),xlab="b.delta",ylab="% responses",ylim=c(0,1))
+    lines(z$b,z$per0)
     text(z$b,z$per0,'0',pos=4)
     lines(z$b,z$per1,type='l')
     text(z$b,z$per1,'1',pos=4)
     lines(z$b,z$per2,type='l')
     text(z$b,z$per2,'2',pos=4)
+    lines(z$b,z$per1+z$per2,col='blue')
+    lines(z$b,z$per2,col='red')
     ##
-    plot(z$b,z$d0,type='l',ylim=c(0,.5),xlim=c(min(z$b),max(z$b)*1.1),xlab="b.delta",ylab="imv")
     nn<-nrow(z)
+    plot(z$b,z$d0,type='l',ylim=c(0,.6),xlim=c(min(z$b),max(z$b)*1.1),xlab="b.delta",ylab="imv",col='blue')
     text(z$b[nn],z$d0[nn],'d0',pos=4)
-    lines(z$b,z$d1,lty=2)
+    lines(z$b,z$d1,lty=2,col='red')
     text(z$b[nn],z$d1[nn],'d1',pos=4)
-    points(z$b,z$thr,col='red',pch=19)
-    text(z$b[nn],z$thr[nn],'poly-t',pos=4,col='red')
-    points(z$b,z$cat,col='blue',pch=19)
-    text(z$b[nn],z$cat[nn],'poly-c',pos=2,col='blue')
+    text(z$b,z$thr,pch=19,'t')
+    text(z$b,z$cat,pch=19,'c')
     NULL
 }
-
-par(mfcol=c(2,2),mar=c(3,3,1,1),mgp=c(2,1,0))
+par(mfcol=c(2,3),mar=c(3,3,1,1),mgp=c(2,1,0))
 f<-function(x) c(n=x$om.cum[1],J=x$om.cum[2],b=x$om.cum[3],
                  thr=x$om.cum[4],
                  d0=x$omctt$`0`,d1=x$omctt$`1`,
                  cat=x$om.cat[4],
                  per0=x$per0,per1=x$per1,per2=x$per2)
+
 z<-data.frame(do.call("rbind",lapply(tab1,f)))
 pf(z)
 z<-data.frame(do.call("rbind",lapply(tab2,f)))
+pf(z)
+z<-data.frame(do.call("rbind",lapply(tab3,f)))
 pf(z)
