@@ -1,6 +1,4 @@
-
-
-                                        # Load required library
+# Load required library
 library(mirt)
 library(irtimv)
 
@@ -171,7 +169,7 @@ run_single_simulation <- function(th, a, b0, b1) {
   
   z_prime <- data.frame(
     resp = x2_prime,
-    p1 = mean(x),
+    p1 = mean(x_prime),
     p2 = p_prime_2pl
   )
   omega_x_prime <- imv(z_prime, p1 = "p1", p2 = "p2")
@@ -182,7 +180,7 @@ run_single_simulation <- function(th, a, b0, b1) {
   
   z_double <- data.frame(
     resp = x2_double,
-    p1 = mean(x),
+    p1 = mean(x_double),
     p2 = p_double_2pl
   )
   omega_x_double <- imv(z_double, p1 = "p1", p2 = "p2")
@@ -266,7 +264,7 @@ f<-function(results) {
         m<-loess(y~x)
         lines(x,predict(m),...)
     }
-    plot(NULL,xlim=c(-1,1),ylim=c(0,.75),xlab='second threshold',ylab='IMV')
+    plot(NULL,xlim=c(-1,1),ylim=c(0,.5),xlab='second threshold',ylab='IMV')
                                         #pf(results$b1_true,results$omega_c)
     pf(results$b1_true,results$omega_t,lwd=2)
     pf(results$b1_true,results$omega_x_prime,col='red',lwd=2)
@@ -276,13 +274,13 @@ f<-function(results) {
     }
 par(mfcol=c(4,1),mgp=c(2,1,0),mar=c(3,3,1,1),oma=rep(.5,4))
 for (i in 1:length(results)) f(results[[i]])
-legend("left",bty='n',fill=c("black","red","blue"),c("grm","2pl_12","2pl_2"))
+legend("left",bty='n',fill=c("black","red","blue"),c("grm","2pl_12","2pl_2"),title='vert line: first threshold')
 
 #for (i in 1:length(results2)) f(results2[[i]])
 
 
 
-## a figure
+## a figure showing the collapse
 th<-seq(-4,4,length.out=1000)
 par(mfrow=c(5,1),mgp=c(2,1,0),mar=c(3,3,1,1),oma=rep(.5,4))
 for (b1 in seq(1.5,-1+.05,length.out=5)) {
