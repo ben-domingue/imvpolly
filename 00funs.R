@@ -86,7 +86,7 @@ estimate_2pl <- function(x_binary, th) {
   
   # Negative log-likelihood for 2PL
   nll_2pl <- function(par) {
-    a <- exp(par[1])  # Use exp to ensure a > 0
+    a <- par[1]
     b <- par[2]
     
     # Probability of correct response
@@ -102,7 +102,7 @@ estimate_2pl <- function(x_binary, th) {
   # Optimize
   fit <- optim(par = c(0, 0), fn = nll_2pl, method = "BFGS")
   
-  a_hat <- exp(fit$par[1])
+  a_hat <- fit$par[1]
   b_hat <- fit$par[2]
   
   return(list(a = a_hat, b = b_hat))

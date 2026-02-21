@@ -121,9 +121,9 @@ run_simulation <- function(n_theta = 1000, n_sim = 10, seed = 123,b0=0,mu=0) {
 
 # Run with default settings
 results<-list()
-for (b0 in seq(-1,.5,by=.5)) results[[as.character(b0)]] <- run_simulation(n_theta = 5000, n_sim = 25, seed = 123,b0=b0,mu=b0)
+for (b0 in seq(-1,.5,by=.5)) results[[as.character(b0)]] <- run_simulation(n_theta = 1000, n_sim = 50, seed = 123,b0=b0,mu=b0)
 results2<-list()
-for (b0 in seq(-1,.5,by=.5)) results2[[as.character(b0)]] <- run_simulation(n_theta = 5000, n_sim = 25, seed = 123,b0=b0,mu=0)
+for (b0 in seq(-1,.5,by=.5)) results2[[as.character(b0)]] <- run_simulation(n_theta = 1000, n_sim = 50, seed = 123,b0=b0,mu=0)
 
 
 f<-function(results) {
