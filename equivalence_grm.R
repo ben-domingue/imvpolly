@@ -11,7 +11,7 @@ source("00funs.R")
 run_single_simulation <- function(th, a, b0, b1) {
   
   # Step 1: Generate initial data x
-  x <- generate_grm_data(th, a, b=(b0, b1))
+  x <- generate_grm_data(th, a, b=c(b0, b1))
   
   # Step 2: Fit models to x
   # Fit GRM
@@ -61,7 +61,7 @@ run_single_simulation <- function(th, a, b0, b1) {
     y <- data.frame(
         resp = x2
     )
-    for (i in 0:(ncol(pred_grm)-1)) y[[paste('p1',i-1,sep='')]]<-mean(x==i)
+    for (i in 1:ncol(pred_grm)) y[[paste('p1',i-1,sep='')]]<-mean(x==i-1)
     for (i in 1:ncol(pred_grm)) y[[paste('p2',i-1,sep='')]]<-pred_grm[,i]
 
     
