@@ -1,4 +1,6 @@
-# Load required library
+##will need to fix the way `y` is defined in run_single_singulation.R
+
+
 library(mirt)
 library(irtimv)
 source("00funs.R")
@@ -9,7 +11,7 @@ source("00funs.R")
 run_single_simulation <- function(th, a, b0, b1) {
   
   # Step 1: Generate initial data x
-  x <- generate_grm_data(th, a, b0, b1)
+  x <- generate_grm_data(th, a, b=(b0, b1))
   
   # Step 2: Fit models to x
   # Fit GRM
@@ -23,11 +25,11 @@ run_single_simulation <- function(th, a, b0, b1) {
   fit_2pl_double <- estimate_2pl(x_double, th)
   
   # Step 3: Generate new test data x2
-  x2 <- generate_grm_data(th, a, b0, b1)
+  x2 <- generate_grm_data(th, a, b=c(b0, b1))
   
   # Step 4: Get predictions for x2
   # Predictions from GRM (for polytomous response)
-  pred_grm <- predict_grm(th, grm_fit$a, grm_fit$b0, grm_fit$b1)
+  pred_grm <- predict_grm(th, grm_fit$a, grm_fit$b)
   
   # Step 5: Calculate omega for dichotomizations
   # For x' dichotomization (x > 0)
@@ -56,16 +58,13 @@ run_single_simulation <- function(th, a, b0, b1) {
   # Reconstruct polytomous predictions from the two 2PLs
   
   # Create full prediction dataframe for imv_c and imv_t
-  y <- data.frame(
-    resp = x2,
-    p10 = mean(x==0),
-    p11 = mean(x==1),
-    p12 = mean(x==2),
-    p20 = pred_grm$p0,
-    p21 = pred_grm$p1,
-    p22 = pred_grm$p2
-  )
-  
+    y <- data.frame(
+        resp = x2
+    )
+    for (i in 0:(ncol(pred_grm)-1)) y[[paste('p1',i-1,sep='')]]<-mean(x==i)
+    for (i in 1:ncol(pred_grm)) y[[paste('p2',i-1,sep='')]]<-pred_grm[,i]
+
+    
   # Calculate frequency table
   pctt.tab <- table(factor(x2, levels = 0:2))
   pctt.tab <- as.numeric(pctt.tab)/length(x2)

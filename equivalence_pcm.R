@@ -57,16 +57,13 @@ run_single_simulation <- function(th, a, b0, b1) {
   # Reconstruct polytomous predictions from the two 2PLs
   
   # Create full prediction dataframe for imv_c and imv_t
-  y <- data.frame(
-    resp = x2,
-    p10 = mean(x==0),
-    p11 = mean(x==1),
-    p12 = mean(x==2),
-    p20 = pred_pcm$p0,
-    p21 = pred_pcm$p1,
-    p22 = pred_pcm$p2
-  )
-  
+    y <- data.frame(
+        resp = x2
+    )
+    for (i in 0:(ncol(pred_pcm)-1)) y[[paste('p1',i-1,sep='')]]<-mean(x==i)
+    for (i in 1:ncol(pred_pcm)) y[[paste('p2',i-1,sep='')]]<-pred_pcm[,i]
+    
+    
   # Calculate frequency table
   pctt.tab <- table(factor(x2, levels = 0:2))
   pctt.tab <- as.numeric(pctt.tab)/length(x2)

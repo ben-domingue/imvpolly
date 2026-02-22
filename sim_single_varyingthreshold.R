@@ -9,51 +9,47 @@ a<-1
 set.seed(123)
 th<-rnorm(10000)
 
-x <- generate_grm_data(th, a, b0, b1)
-x2 <- generate_grm_data(th, a, b0, b1)
+x <- generate_grm_data(th, a, b=c(b0, b1))
+x2 <- generate_grm_data(th, a, b=c(b0, b1))
 
 grmpars<-estimate_grm(x,th)
 pcmpars<-estimate_pcm(x,th)
 ##confirm that these look great https://www.desmos.com/calculator/xev7dsgdqx
 
-grmpr<-predict_grm(th,grmpars$a,grmpars$b0,grmpars$b1)
-pcmpr<-predict_pcm(th,pcmpars$a,pcmpars$d1,pcmpars$d2)
+grmpr<-predict_grm(th,grmpars$a,grmpars$b)
+pcmpr<-predict_pcm(th,pcmpars$a,pcmpars$d)
 
 ## Calculate frequency table
 pctt.tab <- table(factor(x, levels = 0:2))
 pctt.tab <- as.numeric(pctt.tab)/length(x)
 
 y <- data.frame(
-    resp = x2,
-    p10 = pcmpr[,1],
-    p11 = pcmpr[,2],
-    p12 = pcmpr[,3],
-    p20 = grmpr[,1],
-    p21 = grmpr[,2],
-    p22 = grmpr[,3]
+    resp = x2
   )
+for (i in 1:ncol(pcmpr)) y[[paste('p1',i-1,sep='')]]<-pcmpr[,i]
+for (i in 1:ncol(pcmpr)) y[[paste('p2',i-1,sep='')]]<-grmpr[,i]
 
 omega_c <- imv_c(y, pctt.tab, p1 = "p1", p2 = "p2")
 omega_t <- imv_t(y, pctt.tab, p1 = "p1", p2 = "p2")
 
 ##########################################################
-##many items
+##many examples
 simfun<-function(b1,gen) {
     b0<-0
     a<-1
     set.seed(123)
     th<-rnorm(5000)
     if (gen=='grm') {
-        x <- generate_grm_data(th, a, b0, b1)
+        x <- generate_grm_data(th, a, b=c(b0, b1))
         x2 <- generate_grm_data(th, a, b0, b1)
     } else {
-        x <- generate_pcm_data(th, a, b0, b1)
+        x <- generate_pcm_data(th, a, b=c(b0, b1))
         x2 <- generate_pcm_data(th, a, b0, b1)
     }
     grmpars<-estimate_grm(x,th)
     pcmpars<-estimate_pcm(x,th)
     ##confirm that these look great https://www.desmos.com/calculator/xev7dsgdqx
-    grmpr<-predict_grm(th,grmpars$a,grmpars$b0,grmpars$b1)
+    grmpr<-predict_grm(th,grmpars$a,grmpars$b)
     pcmpr<-predict_pcm(th,pcmpars$a,pcmpars$d1,pcmpars$d2)
     if (gen=='grm') pr<-grmpr else alt<-grmpr
     if (gen=='pcm') pr<-pcmpr else alt<-pcmpr
